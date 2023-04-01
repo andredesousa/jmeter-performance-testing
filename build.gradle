@@ -1,0 +1,59 @@
+plugins {
+    id 'com.diffplug.spotless' version '6.11.0'
+    id 'com.star-zero.gradle.githook' version '1.2.1'
+    id "io.quintessent.jmeter" version "1.1.1-5.0"
+    id 'ru.netris.commitlint' version '1.4.1'
+	id 'java'
+}
+
+sourceCompatibility = '11'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+githook {
+    failOnMissingHooksDir = false
+    hooks {
+        'commit-msg' {
+            task = 'commitlint'
+        }
+    }
+}
+
+spotless {
+    format 'xml', {
+        target 'src/test/**/*.xml', 'src/test/**/*.jmx'
+        eclipseWtp('xml')
+    }
+}
+
+jmeter {
+    jmTestFiles = [file('src/test/jmeter/example.jmx')]
+    jmSystemPropertiesFiles = [file('src/test/jmeter/jmeter.properties')]
+    csvLogFile = false
+    enableReports = true
+    enableExtendedReports = true
+}
+
+task lint() {
+    dependsOn 'spotlessXmlCheck'
+    description = 'Checks that source code satisfies formatting steps.'
+    group = 'Verification'
+}
+
+task format() {
+    dependsOn 'spotlessXmlApply'
+    description = 'Applies code formatting steps to source code in-place.'
+    group = 'Verification'
+}
+
+task jmeterResources(type: Copy) {
+    into "$buildDir/jmeter/bin"
+    from "$projectDir/src/test/resources"
+    include 'log4j2.xml'
+}
+
+jmRun.dependsOn jmeterResources
+jmGui.dependsOn jmeterResources
